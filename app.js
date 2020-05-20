@@ -12,6 +12,7 @@ can.height = 800;
 
 
 var spaceShip = new astroid(400, 400, 100, 100, 100, 90, 'red', 50, 50);
+var rockEnemy = new rock(400, 400,0, 50, 'green', 100, 5);
 
 function keydown(ev)
 {
@@ -72,6 +73,8 @@ function gameLoop()
     
     // render the space ship 
     spaceShip.render();
+    rockEnemy.render();
+    rockEnemy.move();
     
     // update the state of the rocks 
     

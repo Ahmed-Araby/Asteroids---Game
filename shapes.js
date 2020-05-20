@@ -39,6 +39,33 @@ class shape
         
         return angle_in_degree / 180 * Math.PI;
     }
+    
+    connectVertices(verticesX, verticesY, lineWidth = '2', color='yellow')
+    {
+        cntx.beginPath();
+        cntx.lineWidth = lineWidth;
+        cntx.strokeStyle = color;
+        
+        var xs = verticesX[0];
+        var ys = verticesY[0];
+        
+        for(var index = 1; index<verticesX.length; index+=1)
+        {
+            var xe = verticesX[index];
+            var ye = verticesY[index];
+            
+            cntx.moveTo(xs, ys);
+            cntx.lineTo(xe, ye);
+            cntx.stroke();
+            xs = xe;
+            ys = ye;
+        }
+        
+        cntx.moveTo(xs, ys);
+        cntx.lineTo(verticesX[0], verticesY[0]);
+        cntx.stroke();
+        cntx.closePath();
+    }
 }
 
 
@@ -112,7 +139,6 @@ class astroid extends shape
             itr.val.move();
             
             // delete the bullet
-            console.log("res", itr.val.amIOut(can.width, can.height))
             if(itr.val.amIOut(can.width, can.height)==true)
             {
                 var tmpItr = itr.next;
@@ -149,22 +175,12 @@ class astroid extends shape
         this.drawLine(cntx, xf, yf, xll, yll, this._color);
         this.drawLine(cntx, xll, yll, xlr, ylr, this._color);
         
-        // move the laser bullets and render them 
-        //console.log(typeof this.bullets[0], this.bullets.length);
-        
-        /*for(var index = 0; index<this.bullets.length; index+=1)
-            this.bullets[index].render();*/
         for( var itr = this.bullets.begin(); itr!=this.bullets.end(); itr = itr.next)
             itr.val.render();
     }
     
     shootLaser()
     {
-        /*
-        will been called in respnse to the space click 
-        event 
-        */
-        
         // get the front tip of the astroide with some margine
         var angle_in_radian = this.degree_to_radian(this._angle);
         var xs = this.x + (this._r + 5) * Math.cos(angle_in_radian);
@@ -175,7 +191,6 @@ class astroid extends shape
         var ye = this.y -(this._r + this._laserRange) * 
         Math.sin(angle_in_radian);
         
-        //this.drawLine(cntx, xf, yf, xe, ye);
         var laserObject = new laser(this.angle, 200, xs, ys, xe, ye, 'green');
         laserObject.render();
         this.bullets.push(laserObject);
@@ -185,22 +200,48 @@ class astroid extends shape
 
 class rock extends shape
 {
-    constructor(x, y, angle, color)
+    constructor(x, y, angle, speed, color, size = 100, numberOfVertices=12, lineWidth=2)
     {
         super(x, y, angle, color);
+        this.speed = speed;
+        this.size = size;
+        this.distance = [];
+        this.rotation = 360 / numberOfVertices;
+        this.numberOfVertices = numberOfVertices;
+        this.lineWidth = lineWidth;
+        var tmpAngle = this.angle;
         
-        /*
-        determine the direction to move in and the speed
-        */
+        for(var index = 0; index<this.numberOfVertices; index+=1)
+        {
+            var dist = parseInt(Math.random() * this.size);
+            this.distance.push(dist);
+        }
     }
     
     render()
     {
-        // geometric logic to render the rock 
+        
+        var tmpAngle = this.angle;
+        var verticesX = [];
+        var verticesY = [];
+        
+        for(var index=0; index<this.numberOfVertices; index+=1)
+        {
+            var angleIndegree = this.degree_to_radian(tmpAngle);
+            var dist = this.distance[index];
+            var tmpX = this.x + Math.cos(angleIndegree) * dist; 
+            var tmpY = this.y - Math.sin(angleIndegree) * dist;
+            verticesX.push(tmpX);
+            verticesY.push(tmpY);
+            tmpAngle +=this.rotation;
+        }
+        this.connectVertices(verticesX, verticesY);
     }
     
     move()
     {
-        
+        var angleInRadian = this.degree_to_radian(this.angle);
+        this.x = this.x + Math.cos(angleInRadian) * this.speed / FPS;
+        this.y = this.y - Math.sin(angleInRadian) * this.speed / FPS;
     }
 }

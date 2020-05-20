@@ -1,0 +1,2 @@
+my problem was that my js run before the page get loaded 
+setting the dimensions of the canvas throw css always cauze me a problems 

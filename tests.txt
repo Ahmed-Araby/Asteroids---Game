@@ -1,0 +1,24 @@
+/*
+// testing the doubly linked list
+var obj = new doublyLinkedList();
+obj.push(1);
+obj.push(2);
+obj.push(3);
+//console.log(obj.head.next.next.next);
+//obj.deleteNode(obj.head);
+console.log(obj.head)
+console.log(obj.tail);
+if(obj.head === obj.tail)
+    console.log("hey")
+
+if(obj.tail.next == null)
+    console.log("yes")
+
+obj.deleteNode(obj.head)
+console.log(obj.head)
+obj.deleteNode(obj.head)
+console.log(obj.head)
+obj.deleteNode(obj.head)
+console.log(obj.head)
+console.log(obj)
+*/

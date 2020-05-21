@@ -1,0 +1,13 @@
+https://stackoverflow.com/questions/50163493/how-to-access-class-functions-inside-event-listener
+
+
+https://stackoverflow.com/questions/11796093/is-there-a-way-to-provide-named-parameters-in-a-function-call-in-javascript
+
+
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_objects/Function/bind
+
+
+
+https://eloquentjavascript.net/00_intro.html
+
+

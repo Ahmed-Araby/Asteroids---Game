@@ -188,7 +188,7 @@ class spaceShip extends shape
         var lineCenterX = this.centerX + (radius + margin + this.laserRange / 2)* Math.cos(angleInRadian);
         var lineCenterY = this.centerY - (radius + margin + this.laserRange / 2)* Math.sin(angleInRadian);
         
-        var laserBullet = new laser(lineCenterX, lineCenterY, speedX=100, speedY=100, circleDiameter = this.laserRange, this.angle, lineWidth = '3', color='blue');
+        var laserBullet = new laser(lineCenterX, lineCenterY, 100, 100, this.laserRange, this.angle, '3', 'blue');
         this.bullets.push(laserBullet);
     }
 }
@@ -261,8 +261,8 @@ class laser extends shape
     update()
     {
         var angleInRadian = this.degree_to_radian(this.angle);
-        this.centerX += Math.cos(angleInRadian) * speedX / FPS;
-        this.centerY -= Math.sin(angleInRadian) * speedY / FPS;
+        this.centerX += Math.cos(angleInRadian) * this.speedX / FPS;
+        this.centerY -= Math.sin(angleInRadian) * this.speedY / FPS;
     }
     
     get_front_point()

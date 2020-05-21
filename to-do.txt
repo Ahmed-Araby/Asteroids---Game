@@ -1,0 +1,5 @@
+amIout check for shape class 
+get a solution for the laser for collision detection 
+watch the dude for some insperation 
+enhcance the rocks shape
+do some research for the collisiopn detection 

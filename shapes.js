@@ -5,14 +5,19 @@ var cntx = can.getContext('2d');
 
 class shape
 {
-    constructor(x, y, angle, color = 'red')
+    constructor(centerX, centerY, speedX = 100 , speedY = 100, circleDiameter = 100, angle = 90, color = 'red')
     {
         // center 
-        this.x = x;
-        this.y = y;
+        this.centerX = centerX;
+        this.centerY = centerY;
         
+        this.speedX = speedX;
+        this.speedY = speedY;
+        
+        this.circleDiameter = circleDiameter;
         this._angle = angle;
-        this._color = color; 
+        
+        this.color = color; 
     }
      
     get angle()
@@ -20,27 +25,29 @@ class shape
         return this._angle;
     }
     
-    set angle(angle_in_degree)
+    set angle(angleInDegree)
     {
-        if(angle_in_degree<0)
-            angle_in_degree +=360;
-        else if(angle_in_degree>360)
-            angle_in_degree -=360;
-        
-        this._angle = angle_in_degree;
+        angleInDegree = this.fix_angle(angleInDegree);
+        this._angle = angleInDegree;
     }
     
-    degree_to_radian(angle_in_degree)
+    fix_angle(angleInDegree)
     {
-        if(angle_in_degree<0)
-            angle_in_degree +=360;
-        else if(angle_in_degree>360)
-            angle_in_degree -=360;
+        if(angleInDegree<0)
+            angleInDegree +=360;
+        else if(angleInDegree>360)
+            angleInDegree -=360;
+        return angleInDegree;
         
-        return angle_in_degree / 180 * Math.PI;
     }
     
-    connectVertices(verticesX, verticesY, lineWidth = '2', color='yellow')
+    degree_to_radian(angleInDegree)
+    {
+        angleInDegree = this.fix_angle(angleInDegree);
+        return angleInDegree / 180 * Math.PI;
+    }
+    
+    connect_vertices(verticesX, verticesY, lineWidth = '2', color='red')
     {
         cntx.beginPath();
         cntx.lineWidth = lineWidth;
@@ -61,88 +68,67 @@ class shape
             ys = ye;
         }
         
-        cntx.moveTo(xs, ys);
-        cntx.lineTo(verticesX[0], verticesY[0]);
-        cntx.stroke();
+        if(verticesX.length > 2){
+            cntx.moveTo(xs, ys);
+            cntx.lineTo(verticesX[0], verticesY[0]);
+            cntx.stroke();
+        }
         cntx.closePath();
     }
 }
 
 
 
-class astroid extends shape
+class spaceShip extends shape
 {
-    constructor(x, y, xSpeed, ySpeed, rotationSpeed, angle, color, size, laserRange)
+    constructor(centerX, centerY, speedX=100, speedY=100, rotationSpeed=50, circleDiameter = 100, laserRange = 100, angle = 90, color='red')
     {
-        super(x, y, angle, color);
-        this._size = size;
-        
         /*
-            radius for the virtual vircle that seround the triangle 
-        */
         
-        this._r = size / 2; 
-        this._laserRange = laserRange;
+        speed is in pixel per second
+        radius for the virtual vircle that seround the triangle
         
-        // speed is in pixel per second
-        this._xSpeed = xSpeed;
-        this._ySpeed = ySpeed;
-        this._rotationSpeed = rotationSpeed;
-        
-        /*
-            1 rotate left,
-            0 no rotation,
-            -1 rotate right
+        1 rotate left,
+        0 no rotation,
+        -1 rotate right
             
-            -1 move up 
-            1 move down 
+        -1 move up 
+        1 move down
+        
         */
+        
+        super(centerX, centerY, speedX, speedY, circleDiameter, angle, color);   
+        
+        this.rotationSpeed = rotationSpeed;
+        this.laserRange = laserRange;
         
         this.rotate = 0;   
         this.move = 0;
         
         this.bullets = new doublyLinkedList();
-       
-    }
-    
-    
-    drawLine(cntx, xs, ys, xe, ye, color = "red")
-    {
-        cntx.beginPath();
-        cntx.lineWidth = '2';
-        cntx.strokeStyle = color;
-        
-        cntx.moveTo(xs, ys);
-        cntx.lineTo(xe, ye);
-        cntx.closePath();
-        cntx.stroke();
     }
     
     update()
     {
+        // update the state of the space ship
         // rotate the ship 
-        this.angle = this.angle + this.rotate * this._rotationSpeed / FPS;
+        this.angle = this.angle + this.rotate * this.rotationSpeed / FPS;
         
-        // move the center of the ship
-        /*
-        the ship need to move in the direction of the nose 
-        */
-        
+        // move the center of the ship respect to the ship orientation
         var angleInRadian = this.degree_to_radian(this.angle);
-        // move in the x direction 
-        this.x -= this.move * (this._xSpeed * Math.cos(angleInRadian) / FPS);
-        // move in the reverse of Y direction 
-        this.y += this.move * (this._ySpeed * Math.sin(angleInRadian) / FPS);
         
-        console.log("bullet number", this.bullets.length());
-        for( var itr = this.bullets.begin(); itr!=this.bullets.end();){
-            itr.val.move();
-            
-            // delete the bullet
+        // move in the x direction 
+        this.centerX -= this.move * (this.speedX * Math.cos(angleInRadian) / FPS);
+        // move in the reverse of Y direction 
+        this.centerY += this.move * (this.speedY * Math.sin(angleInRadian) / FPS);
+        
+        // update the state laser bullets 
+        for(var itr = this.bullets.begin(); itr!=this.bullets.end();){
+            itr.val.update();
             if(itr.val.amIOut(can.width, can.height)==true)
             {
                 var tmpItr = itr.next;
-                this.bullets.deleteNode(itr); // COMPARE BY reference 
+                this.bullets.deleteNode(itr);
                 itr = tmpItr;
                 continue; 
             }
@@ -157,65 +143,85 @@ class astroid extends shape
         I don't understand this trignometry !!!!
         */
         
+        // render the space ship
         // get the front tip of the astroide
-        var angle_in_radian = this.degree_to_radian(this._angle);
-        var xf = this.x + this._r  * Math.cos(angle_in_radian);
-        var yf = this.y - this._r  * Math.sin(angle_in_radian);
+        var radius = this.circleDiameter / 2;
+        var angleInRadian = this.degree_to_radian(this.angle);
+        
+        var xFront = this.centerX + radius  * Math.cos(angleInRadian);
+        var yFront = this.centerY - radius  * Math.sin(angleInRadian);
         
         // get the lower left tip of the astroide
-        var xll = this.x - this._r * (Math.cos(angle_in_radian) + Math.sin(angle_in_radian));
-        var yll = this.y + this._r * (Math.sin(angle_in_radian) - Math.cos(angle_in_radian));
+        var xLowerLeft = this.centerX - radius * (Math.cos(angleInRadian) + Math.sin(angleInRadian));
+        var yLowerLeft = this.centerY + radius * (Math.sin(angleInRadian) - Math.cos(angleInRadian));
         
         // get the lower right tip of the astroide 
-        var xlr = this.x - this._r * (Math.cos(angle_in_radian) - Math.sin(angle_in_radian));
-        var ylr = this.y + this._r * (Math.sin(angle_in_radian) + Math.cos(angle_in_radian));
+        var xLowerRight = this.centerX - radius * (Math.cos(angleInRadian) - Math.sin(angleInRadian));
+        var yLowerRight = this.centerY + radius * (Math.sin(angleInRadian) + Math.cos(angleInRadian));
         
         // draw the ship
-        this.drawLine(cntx, xf, yf, xlr, ylr, this._color);
-        this.drawLine(cntx, xf, yf, xll, yll, this._color);
-        this.drawLine(cntx, xll, yll, xlr, ylr, this._color);
+        var verticesX = [xFront, xLowerLeft, xLowerRight];
+        var verticesY = [yFront, yLowerLeft, yLowerRight];
         
+        //console.log(verticesY);
+        this.connect_vertices(verticesX, verticesY, '2', this.color);
+        
+        
+        // render the laser bullets 
         for( var itr = this.bullets.begin(); itr!=this.bullets.end(); itr = itr.next)
             itr.val.render();
     }
     
     shootLaser()
     {
+        /*
+        we can view centerX and centerY addition as translation 
+        and the rest of the equation is spliting the vecetor in a specific direction 
+        into two vectors one in X direction and 1 in y direction
+        */
+        
         // get the front tip of the astroide with some margine
-        var angle_in_radian = this.degree_to_radian(this._angle);
-        var xs = this.x + (this._r + 5) * Math.cos(angle_in_radian);
-        var ys = this.y - (this._r + 5) * Math.sin(angle_in_radian);
+        var radius = this.circleDiameter / 2;
+        var angleInRadian = this.degree_to_radian(this.angle);
+        var margin = 5;
         
-        // get the end point of the laser range 
-        var xe = this.x + (this._r + this._laserRange) * Math.cos(angle_in_radian);
-        var ye = this.y -(this._r + this._laserRange) * 
-        Math.sin(angle_in_radian);
+        var lineCenterX = this.centerX + (radius + margin + this.laserRange / 2)* Math.cos(angleInRadian);
+        var lineCenterY = this.centerY - (radius + margin + this.laserRange / 2)* Math.sin(angleInRadian);
         
-        var laserObject = new laser(this.angle, 200, xs, ys, xe, ye, 'green');
-        laserObject.render();
-        this.bullets.push(laserObject);
+        var laserBullet = new laser(lineCenterX, lineCenterY, speedX=100, speedY=100, circleDiameter = this.laserRange, this.angle, lineWidth = '3', color='blue');
+        this.bullets.push(laserBullet);
     }
 }
 
 
 class rock extends shape
 {
-    constructor(x, y, angle, speed, color, size = 100, numberOfVertices=12, lineWidth=2)
+    constructor(centerX, centerY, speedX=100, speedY=100, rotationSpeed=50, circleDiameter = 100, angle = 90, numberOfVertices = 4, lineWidth = '4', color='red')
     {
-        super(x, y, angle, color);
-        this.speed = speed;
-        this.size = size;
+        super(centerX, centerY, speedX, speedY, circleDiameter, angle, color); 
+        
         this.distance = [];
-        this.rotation = 360 / numberOfVertices;
+        this.partialRotationAngle = 360 / numberOfVertices;
         this.numberOfVertices = numberOfVertices;
         this.lineWidth = lineWidth;
-        var tmpAngle = this.angle;
+        
+        /*
+            build the distance for the vertices that define the rock shape
+        */
         
         for(var index = 0; index<this.numberOfVertices; index+=1)
         {
-            var dist = parseInt(Math.random() * this.size);
+            var dist = parseInt(Math.random() * this.circleDiameter / 2);
             this.distance.push(dist);
         }
+    }
+    
+    
+    update()
+    {
+        var angleInRadian = this.degree_to_radian(this.angle);
+        this.centerX = this.centerX + Math.cos(angleInRadian) * this.speedX / FPS;
+        this.centerY = this.centerY - Math.sin(angleInRadian) * this.speedY / FPS;
     }
     
     render()
@@ -229,19 +235,85 @@ class rock extends shape
         {
             var angleIndegree = this.degree_to_radian(tmpAngle);
             var dist = this.distance[index];
-            var tmpX = this.x + Math.cos(angleIndegree) * dist; 
-            var tmpY = this.y - Math.sin(angleIndegree) * dist;
+            var tmpX = this.centerX + Math.cos(angleIndegree) * dist; 
+            var tmpY = this.centerY - Math.sin(angleIndegree) * dist;
             verticesX.push(tmpX);
             verticesY.push(tmpY);
-            tmpAngle +=this.rotation;
+            tmpAngle +=this.partialRotationAngle;
+            tmpAngle = this.fix_angle(tmpAngle);
         }
-        this.connectVertices(verticesX, verticesY);
+        
+        this.connect_vertices(verticesX, verticesY, this.lineWidth, this.color);
     }
     
-    move()
+}
+
+class laser extends shape
+{
+    constructor(centerX, centerY, speedX=100, speedY=100, circleDiameter = 100, angle = 90, lineWidth = '4', color='red')
+    {
+        // circle diameter is the length of the line 
+        super(centerX, centerY, speedX, speedY, circleDiameter, angle, color);
+        
+        this.lineWidth = lineWidth;
+    }
+    
+    update()
     {
         var angleInRadian = this.degree_to_radian(this.angle);
-        this.x = this.x + Math.cos(angleInRadian) * this.speed / FPS;
-        this.y = this.y - Math.sin(angleInRadian) * this.speed / FPS;
+        this.centerX += Math.cos(angleInRadian) * speedX / FPS;
+        this.centerY -= Math.sin(angleInRadian) * speedY / FPS;
+    }
+    
+    get_front_point()
+    {
+        var angleInRadian = this.degree_to_radian(this.angle);
+        var radius = this.circleDiameter / 2;
+        
+        // get front x and y 
+        var frontX = this.centerX + Math.cos(angleInRadian) * radius;
+        var frontY = this.centerY - Math.sin(angleInRadian) * radius;
+        
+        return  [frontX, frontY];
+    }
+    
+    get_back_point()
+    {
+        var angleInRadian = this.degree_to_radian(this.angle);
+        var radius = this.circleDiameter / 2;
+        
+        var backX = this.centerX - Math.cos(angleInRadian) * (radius);
+        var backY = this.centerY + Math.sin(angleInRadian) * (radius);
+        
+        return [backX, backY];
+    }
+    
+    render()
+    {
+
+        
+        // get front x and y
+        var frontPoint = this.get_front_point(); 
+        var frontX = frontPoint[0];
+        var frontY = frontPoint[1];
+        // get back x and y 
+        var backPoint = this.get_back_point();
+        var backX = backPoint[0];
+        var backY = backPoint[1];
+        
+        var verticesX = [backX, frontX];
+        var verticesY = [backY, frontY];
+        
+        this.connect_vertices(verticesX, verticesY, this.lineWidth, this.color);
+    }
+    
+    amIOut(canWidth, canHeight)
+    {
+        var backPoint = this.get_back_point();
+        var backX = backPoint[0];
+        var backY = backPoint[1];
+        if(backX < 0 || backX >=canWidth || backY <0 || backY >=canHeight)
+            return true;
+        return false;
     }
 }

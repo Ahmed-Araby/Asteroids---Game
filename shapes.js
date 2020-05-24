@@ -112,6 +112,7 @@ class spaceShip extends shape
     {
         // update the state of the space ship
         // rotate the ship 
+        
         this.angle = this.angle + this.rotate * this.rotationSpeed / FPS;
         
         // move the center of the ship respect to the ship orientation
@@ -191,6 +192,39 @@ class spaceShip extends shape
         var laserBullet = new laser(lineCenterX, lineCenterY, 100, 100, this.laserRange, this.angle, '3', 'blue');
         this.bullets.push(laserBullet);
     }
+    
+    build_polygon()
+    {
+        // get the front tip of the astroide
+        var radius = this.circleDiameter / 2;
+        var angleInRadian = this.degree_to_radian(this.angle);
+        
+        var xFront = this.centerX + radius  * Math.cos(angleInRadian);
+        var yFront = this.centerY - radius  * Math.sin(angleInRadian);
+        
+        var p1 = new point(xFront, yFront);
+        
+        // get the lower right tip of the astroide 
+        var xLowerRight = this.centerX - radius * (Math.cos(angleInRadian) - Math.sin(angleInRadian));
+        var yLowerRight = this.centerY + radius * (Math.sin(angleInRadian) + Math.cos(angleInRadian));
+        
+        var p2 = new point(xLowerRight, yLowerRight);
+        
+        // get the lower left tip of the astroide
+        var xLowerLeft = this.centerX - radius * (Math.cos(angleInRadian) + Math.sin(angleInRadian));
+        var yLowerLeft = this.centerY + radius * (Math.sin(angleInRadian) - Math.cos(angleInRadian));
+        
+        var p3 = new point(xLowerLeft, yLowerLeft);
+        
+        // build the edges 
+        // in clock wise direction 
+        var e1 = new edge(p1, p2);
+        var e2 = new edge(p2, p3);
+        var e3 = new edge(p3, p1);
+        var edges = [e1, e2, e3];
+        var poly = new polygon(edges);
+        return poly;
+    }
 }
 
 
@@ -204,14 +238,16 @@ class rock extends shape
         this.partialRotationAngle = 360 / numberOfVertices;
         this.numberOfVertices = numberOfVertices;
         this.lineWidth = lineWidth;
-        
+        this.rotationSpeed = rotationSpeed;
         /*
             build the distance for the vertices that define the rock shape
         */
+        console.log(this.numberOfVertices);
         
         for(var index = 0; index<this.numberOfVertices; index+=1)
         {
-            var dist = parseInt(Math.random() * this.circleDiameter / 2);
+            var rand = Math.random();
+            var dist = parseInt(rand * this.circleDiameter / 2 + (1-rand) * this.circleDiameter / 4); // add jagging
             this.distance.push(dist);
         }
     }
@@ -219,6 +255,11 @@ class rock extends shape
     
     update()
     {
+        // rotate 
+        this.angle = this.angle + this.rotationSpeed / FPS;
+        this.angle = this.fix_angle(this.angle);
+        
+        // translate 
         var angleInRadian = this.degree_to_radian(this.angle);
         this.centerX = this.centerX + Math.cos(angleInRadian) * this.speedX / FPS;
         this.centerY = this.centerY - Math.sin(angleInRadian) * this.speedY / FPS;
@@ -226,6 +267,8 @@ class rock extends shape
     
     render()
     {
+        
+        
         
         var tmpAngle = this.angle;
         var verticesX = [];
@@ -244,6 +287,38 @@ class rock extends shape
         }
         
         this.connect_vertices(verticesX, verticesY, this.lineWidth, this.color);
+    }
+    build_polygon()
+    {
+        
+        
+        var tmpAngle = this.angle;
+        var pointsArr = [];
+        var edges = [];
+        
+        for(var index=0; index<this.numberOfVertices; index+=1)
+        {
+            var angleIndegree = this.degree_to_radian(tmpAngle);
+            var dist = this.distance[index];
+            var tmpX = this.centerX + Math.cos(angleIndegree) * dist; 
+            var tmpY = this.centerY - Math.sin(angleIndegree) * dist;
+            tmpAngle +=this.partialRotationAngle;
+            tmpAngle = this.fix_angle(tmpAngle);
+            
+            pointsArr.push(new point(tmpX, tmpY));
+        }
+        
+        // build edges 
+        for(var i = this.numberOfVertices-1; i>=0; i--)
+        {
+            var j = i-1;
+            if(j<0)
+                j = this.numberOfVertices-1;
+            var e = new edge(pointsArr[i], pointsArr[j]);
+            edges.push(e);
+        }
+        var poly = new polygon(edges);
+        return poly;
     }
     
 }

@@ -5,16 +5,16 @@ class admin
         this.level = level;
         
         // supposed to read the specification from a file
-        this.speedX = 100;
-        this.speedY = 100;
-        this.rotationSpeed = 50;
-        this.numberOfRocks = 12;
-        
+        this.speedX = 20;
+        this.speedY = 20;
+        this.rotationSpeed = 0;
+        this.numberOfRocks = 5;
+        this.rockCircleDiameter = 200;
         this.rocks = new doublyLinkedList();
         
         this.rockLineWidth = '4'; // suposed to be determined from the level !!!
-        this.playerSpaceShip = new spaceShip(can.width/2, can.height/2, 100,100, 50, 100, 100,90, 'red');
-        
+        this.playerSpaceShip = new spaceShip(can.width/2, can.height/2, 300,300, 200, 100, 100,90, 'red');
+        this.collisionDetector = new collisionDetection();
         // add event listners 
         document.addEventListener('keydown', this.keydown.bind(this));
         document.addEventListener('keyup', this.keyup.bind(this));
@@ -90,8 +90,27 @@ class admin
                 centerX = can.width - 1;
                 angle = 135 + Math.random() * 90;
             }
+            
             // row 
-            centerY = Math.random() * can.height;
+            var cnt = 0;
+            while(true)
+            {
+                var out = true;
+                centerY = Math.random() * can.height;
+                for(var itr = this.rocks.begin();  itr!=this.rocks.end(); itr = itr.next){
+                    var dis = this.distance_between_2points(centerY, itr.val.centerY);
+                    if(dis < this.rockCircleDiameter /2){
+                        out=false;
+                        break;
+                    }
+                }
+                
+                cnt +=1;
+                //console.log("Y", this.rocks.length(), dis, this.rockCircleDiameter / 2, out)
+                //break;
+                if(out == true || this.rocks.length() ==0 || cnt >=20)
+                    break;
+            }
         }
         
         else // vertical 
@@ -104,12 +123,33 @@ class admin
                 centerY = can.height - 1;
                 angle = 45 + Math.random() * 90
             }
-            centerX = Math.random() * can.width;
+            
+            // col 
+            var cnt = 0;
+            while(true)
+            {
+                var out = true;
+                centerX = Math.random() * can.width;
+                for(var itr = this.rocks.begin();  itr!=this.rocks.end(); itr = itr.next){
+                    var dis = this.distance_between_2points(centerX, itr.val.centerX);
+                    
+                    if(dis < this.rockCircleDiameter /2){
+                        out=false;
+                        break;
+                    }
+                }
+                
+                cnt +=1;
+                //console.log("Y", this.rocks.length(), dis, this.rockCircleDiameter / 2, out)
+                //break;
+                if(out == true || this.rocks.length() ==0 || cnt >=20)
+                    break;
+            }
         }
         
-        var numberOfVertices = Math.max(4, Math.random()*10);
+        var numberOfVertices = Math.floor(Math.max(4, Math.random()*10));
         
-        var rockObj = new rock(centerX , centerY, this.speedX, this.speedY, 50, 200, angle, numberOfVertices, '4', 'green');
+        var rockObj = new rock(centerX , centerY, this.speedX, this.speedY, this.rotationSpeed, this.rockCircleDiameter, angle, numberOfVertices, this.rockLineWidth, 'green');
         
         return rockObj;
 
@@ -118,7 +158,7 @@ class admin
     spwan_rocks()
     {
         var curLength = this.rocks.length();
-        console.log(curLength);
+        //console.log(curLength);
         for(var index = curLength; index<this.numberOfRocks; index+=1)
         {
             var rockObj = this.build_aRock();
@@ -134,8 +174,10 @@ class admin
         cntx.fillStyle = 'black';
         cntx.fillRect(0 , 0, can.width, can.height);
     
+        //  build rocks 
         this.spwan_rocks();
         
+        // update , render for rocks 
         for(var itr = this.rocks.begin(); itr!=this.rocks.end(); itr=itr.next){
             itr.val.update();
             itr.val.render();
@@ -143,6 +185,7 @@ class admin
             // check for delation ????
         }
         
+        // update , render the space ship 
         this.playerSpaceShip.update();
         this.playerSpaceShip.render();
         
@@ -150,6 +193,27 @@ class admin
         collesion detection
         laser bullets inside the space ship 
         will cauze us an issue 
+        
+        [ISSUE] we need to partion the non convex polygon into convex
+        small polygons = triangles 
+        as the sat algo work for convex polygons 
         */
+        
+        // ship and rocks
+        var shipPoly = this.playerSpaceShip.build_polygon();
+        for(var itr = this.rocks.begin(); itr!=this.rocks.end(); itr = itr = itr.next){
+            var rockpoly = itr.val.build_polygon();
+            var res = this.collisionDetector.detect_collision(shipPoly, rockpoly, 'SAT');
+            
+            console.log(rockpoly.edges[0])
+            if(res==true)
+              itr.val.color = 'red';
+            else 
+                itr.val.color = 'white';
+        }
+    }
+    
+    distance_between_2points(a, b){
+        return Math.sqrt((a-b) * (a-b));
     }
 }

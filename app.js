@@ -2,6 +2,7 @@ var can = document.getElementById('can');
 var cntx = can.getContext('2d');
 can.width = 800;
 can.height = 800;
+
 function gameLoop()
 {
     
@@ -25,6 +26,7 @@ var playerSpaceShip = new spaceShip(400, 400, speedX=100, speedY=100, rotationSp
 
 var rockEnemy = new rock(400 , 400, speedX=100, speedY=100, rotationSpeed=50, circleDiameter = 200, angle = 90, numberOfVertices = 4, lineWidth = '4', color='green')
 */
+
 var adminObj = new admin(1);
 
 console.log("start the game");

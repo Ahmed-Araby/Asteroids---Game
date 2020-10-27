@@ -33,6 +33,8 @@ console.log("start the game");
 /*
 without the brackets the context of "this"
 get changed 
+
+here adminObj is resolved from the clossest closure which
 */
 setInterval(function (){adminObj.game_loop()}, 1000/FPS);
 console.log("end the game")
